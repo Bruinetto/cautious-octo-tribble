@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {
   AbsoluteFill,
+  Audio,
   Easing,
   Img,
   continueRender,
@@ -164,10 +165,6 @@ export const DesignLanguage: React.FC = () => {
   const bgInner = interpolateColors(warm - recap * 0.7, [0, 1], ['#1b1820', '#6b3f46']);
   const bgOuter = interpolateColors(warm - recap * 0.7, [0, 1], ['#070608', '#2a1519']);
 
-  // --- intro title ---
-  const titleIn = sp(f, 4, 20);
-  const titleOut = tw(f, 90, 110);
-
   // --- OLD card ---
   const oldIn = sp(f, 10, 18, 70);
   const toSide = sp(f, 105, 20, 80); // move to the left
@@ -206,8 +203,6 @@ export const DesignLanguage: React.FC = () => {
   const oldLbl = tw(f, 40, 58) * (1 - tw(f, 100, 110));
   const pairLbl = tw(f, 145, 162) * (1 - tw(f, 178, 190));
   const plusP = sp(f, 150, 14, 120) * (1 - tw(f, 178, 190));
-  const colourCap = tw(f, 190, 205) * (1 - tw(f, 240, 252));
-  const layoutCap = tw(f, 252, 266) * (1 - tw(f, 290, 300));
   const newLbl = tw(f, 330, 350) * (1 - tw(f, 430, 442));
 
   // --- recap ---
@@ -220,27 +215,7 @@ export const DesignLanguage: React.FC = () => {
 
   return (
     <AbsoluteFill style={{background: `radial-gradient(circle at 50% 45%, ${bgInner} 0%, ${bgOuter} 75%)`}}>
-      {/* intro title */}
-      {f < 115 && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 70,
-            width: '100%',
-            textAlign: 'center',
-            fontFamily: FONT,
-            color: '#fff',
-            opacity: titleIn * (1 - titleOut),
-            transform: `translateY(${(1 - titleIn) * -20 - titleOut * 20}px)`,
-          }}
-        >
-          <div style={{fontStyle: 'italic', fontSize: 34, opacity: 0.75}}>fantexinsta</div>
-          <div style={{fontWeight: 500, fontSize: 64, letterSpacing: -1.5, marginTop: 4}}>
-            A new design language
-          </div>
-        </div>
-      )}
-
+      <Audio src={staticFile('music.wav')} />
       {/* OLD */}
       {f < 265 && (
         <Card
@@ -305,14 +280,11 @@ export const DesignLanguage: React.FC = () => {
       )}
 
       {/* side-by-side labels & plus */}
-      <Label text="OLD" x={290} y={760} p={pairLbl} sub="dark, bold, loud" />
-      <Label text="CANDIDATE" x={790} y={760} p={pairLbl} sub="clean, light, minimal" />
+      <Label text="OLD" x={290} y={760} p={pairLbl} />
+      <Label text="CANDIDATE" x={790} y={760} p={pairLbl} />
       <Symbol char="+" x={540} y={520} p={plusP} />
 
-      {/* captions explaining the merge */}
-      <Label text="THE COLOUR" x={540} y={70} p={colourCap} size={28} sub="comes from the old post" />
-      <Label text="THE LAYOUT" x={540} y={70} p={layoutCap} size={28} sub="comes from the candidate" />
-      <Label text="NEW" x={540} y={985} p={newLbl} size={26} sub="fantexinsta design language" />
+      <Label text="NEW" x={540} y={985} p={newLbl} size={26} />
 
       {/* RECAP: old + candidate = new */}
       {inRecap && (
@@ -325,20 +297,6 @@ export const DesignLanguage: React.FC = () => {
           <Label text="OLD" x={190} y={690} p={rLbl} size={20} />
           <Label text="CANDIDATE" x={505} y={690} p={rLbl} size={20} />
           <Label text="NEW" x={820} y={690} p={rLbl} size={20} />
-          <div
-            style={{
-              position: 'absolute',
-              top: 150,
-              width: '100%',
-              textAlign: 'center',
-              fontFamily: FONT,
-              color: '#fff',
-              opacity: rLbl,
-              transform: `translateY(${(1 - rLbl) * 16}px)`,
-            }}
-          >
-            <div style={{fontWeight: 500, fontSize: 56, letterSpacing: -1.2}}>fantexinsta, redesigned</div>
-          </div>
         </>
       )}
     </AbsoluteFill>
