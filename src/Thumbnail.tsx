@@ -6,6 +6,14 @@ const CYAN = '#22d3ee';
 const RED = '#ff3b3b';
 const BLUE = '#2f6bff';
 
+// Same instant as 10:00 AM New York (EDT) on 9–11 Oct 2026
+const OTHER_TIMES = [
+  {time: '16:00', city: 'ITALY'},
+  {time: '15:00', city: 'LONDON'},
+  {time: '7:00 AM', city: 'LOS ANGELES'},
+  {time: '23:00', city: 'TOKYO'},
+];
+
 const Accent: React.FC<{color: string; children: React.ReactNode}> = ({color, children}) => (
   <span style={{color, textShadow: `0 0 0.35em ${color}aa`}}>{children}</span>
 );
@@ -75,13 +83,32 @@ export const Thumbnail: React.FC = () => {
           style={{
             marginTop: 5 * u,
             fontWeight: 700,
-            fontSize: (vertical ? 5.2 : 5.6) * u,
+            fontSize: (vertical ? 5.6 : 6) * u,
             letterSpacing: '-0.01em',
           }}
         >
           10:00 AM <span style={{fontWeight: 500, opacity: 0.7, fontSize: '0.7em', letterSpacing: '0.2em'}}>NEW YORK</span>
-          <span style={{opacity: 0.4}}>{'  ·  '}</span>
-          16:00 <span style={{fontWeight: 500, opacity: 0.7, fontSize: '0.7em', letterSpacing: '0.2em'}}>ITALY</span>
+        </div>
+        <div
+          style={{
+            marginTop: 1.6 * u,
+            fontWeight: 500,
+            fontSize: (vertical ? 2.9 : 2.9) * u,
+            letterSpacing: '0.12em',
+            color: 'rgba(255,255,255,.6)',
+            whiteSpace: 'pre',
+            display: vertical ? 'grid' : 'block',
+            gridTemplateColumns: '1fr 1fr',
+            rowGap: 1.2 * u,
+            columnGap: 5 * u,
+          }}
+        >
+          {OTHER_TIMES.map((z, i) => (
+            <span key={z.city}>
+              {i > 0 && !vertical && <span style={{opacity: 0.5}}>{'   ·   '}</span>}
+              <span style={{fontWeight: 700, color: 'rgba(255,255,255,.85)'}}>{z.time}</span> {z.city}
+            </span>
+          ))}
         </div>
       </AbsoluteFill>
     </AbsoluteFill>
