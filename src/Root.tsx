@@ -9,6 +9,7 @@ import {Promo, PROMO_DURATION} from './Promo';
 import {Thumbnail} from './Thumbnail';
 import {DuoAnnounce, DUO_DURATION} from './DuoAnnounce';
 import {KernelPanic, KP_DURATION} from './KernelPanic';
+import {KernelPanicEpic, KP_EPIC_DURATION} from './KernelPanicEpic';
 
 export const Root = () => (
   <>
@@ -35,5 +36,6 @@ export const Root = () => (
   <Composition id="DuoVertical" component={DuoAnnounce} durationInFrames={DUO_DURATION} fps={30} width={1080} height={1920} />
   <Composition id="DuoHorizontal" component={DuoAnnounce} durationInFrames={DUO_DURATION} fps={30} width={1920} height={1080} />
   <Composition id="KernelPanic" component={KernelPanic} durationInFrames={KP_DURATION} fps={30} width={1080} height={1920} />
+  <Composition id="KernelPanicEpic" component={KernelPanicEpic} durationInFrames={KP_EPIC_DURATION} fps={30} width={1080} height={1920} />
   </>
 );
