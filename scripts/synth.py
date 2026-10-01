@@ -39,7 +39,7 @@ class Track:
         self.L[i:j] = 0
         self.R[i:j] = 0
 
-    def write(self, path, reverb=0.25, fade_out=1.2, hall=1.8, decay=3.3):
+    def write(self, path, reverb=0.25, fade_out=1.2, hall=1.8, decay=3.3, drive=1.8):
         ir_n = int(hall * SR)
         ir_t = np.arange(ir_n) / SR
         irL = rng.normal(0, 1, ir_n) * np.exp(-ir_t * decay)
@@ -50,7 +50,7 @@ class Track:
         t = np.arange(self.n) / SR
         fade = np.minimum(1, t / 0.02) * np.clip((self.dur - t) / fade_out, 0, 1)
         mix = np.stack([self.L + wetL, self.R + wetR], 1) * fade[:, None]
-        mix = np.tanh(mix / np.max(np.abs(mix)) * 1.8)
+        mix = np.tanh(mix / np.max(np.abs(mix)) * drive)
         mix = mix / np.max(np.abs(mix)) * 0.89
         with wave.open(path, 'wb') as w:
             w.setnchannels(2)
@@ -223,3 +223,48 @@ def riser(length):
 def reverse_swell(length):
     c = crash(length)[::-1]
     return c * 1.2
+
+
+# ---------- extra trailer instruments ----------
+def clang(length=2.5, base=180):
+    """Metallic, inharmonic impact layer."""
+    t = tt(length)
+    out = np.zeros_like(t)
+    for ratio, amp, dec in ((1.0, 1.0, 2.5), (2.76, 0.7, 3.5), (5.4, 0.5, 5), (8.93, 0.35, 7), (13.3, 0.2, 9)):
+        out += amp * np.sin(2 * np.pi * base * ratio * t + rng.uniform(0, 6.28)) * np.exp(-t * dec)
+    x = rng.uniform(-1, 1, len(t))
+    out += (x - onepole_lp(x, 5000)) * np.exp(-t * 25) * 0.8
+    return out * 0.35
+
+
+def snare(length=0.25):
+    t = tt(length)
+    x = rng.uniform(-1, 1, len(t))
+    body = np.sin(2 * np.pi * 190 * t) * np.exp(-t * 30)
+    return ((x - onepole_lp(x, 1500)) * 0.7 + body * 0.5) * np.exp(-t * 18) * 0.6
+
+
+def snare_roll(track, t0, t1, gain=0.6):
+    """Military roll that accelerates and swells from t0 to t1."""
+    t = t0
+    while t < t1:
+        p = (t - t0) / (t1 - t0)
+        track.add(snare(), t, gain * (0.25 + 0.75 * p ** 1.5), pan=(rng.uniform(-0.3, 0.3)))
+        t += 0.125 * (1 - p) + 0.03 * p
+
+
+def brass(note, length, vib=True):
+    """Heroic brass lead: filtered saw stack with a swell and vibrato."""
+    t = tt(length)
+    f0 = midi(note)
+    v = 1 + (0.005 * np.sin(2 * np.pi * 5.2 * t) * np.minimum(1, t / 0.4) if vib else 0)
+    cutoff = 600 + 2200 * np.minimum(1, t / 0.15) * np.exp(-t * 0.6)
+    out = np.zeros_like(t)
+    for det in (-0.08, 0.0, 0.08):
+        ph = 2 * np.pi * np.cumsum(f0 * 2 ** (det / 12) * v) / SR
+        for h in range(1, 24):
+            if f0 * h > 9000:
+                break
+            out += (1 / h) * np.exp(-f0 * h / cutoff) * np.sin(h * ph)
+    e = np.minimum(1, t / 0.06) * np.clip((length - t) / 0.12, 0, 1)
+    return np.tanh(out * e * 0.9) * 0.6

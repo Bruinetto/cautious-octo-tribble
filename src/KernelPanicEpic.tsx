@@ -18,6 +18,7 @@ import {
 export const KP_EPIC_DURATION = 1320;
 const FPS = 30;
 const FONT = "'DM Sans', sans-serif";
+const HEAVY = "'Anton', 'DM Sans', sans-serif";
 const MONO = "'DejaVu Sans Mono', 'Liberation Mono', monospace";
 const RED = '#ff2d3d';
 const BLUE = '#1f8bff';
@@ -69,7 +70,10 @@ const hitEnv = (f: number, at: number, decay = 6) => (f < at ? 0 : Math.exp(-(f 
 const mix = (a: number, b: number, p: number) => a + (b - a) * p;
 const inRange = (f: number, a: number, b: number) => f >= a && f < b;
 
-/** Hard-hitting text: flies in from huge scale with ghost trails and RGB split, zooms through on exit. */
+/**
+ * Hard-hitting trailer text: flips in from huge scale with ghost trails and RGB split,
+ * metallic fill with a light sweep, extruded depth, zooms through on exit.
+ */
 const Slam: React.FC<{
   f: number;
   at: number;
@@ -77,43 +81,77 @@ const Slam: React.FC<{
   y: number;
   size: number;
   color?: string;
-  weight?: number;
   font?: string;
   spacing?: string;
   glitch?: number;
   children: React.ReactNode;
-}> = ({f, at, until, y, size, color = '#fff', weight = 700, font = FONT, spacing = '-0.03em', glitch = 0, children}) => {
+}> = ({f, at, until, y, size, color = '#fff', font = HEAVY, spacing = '0.01em', glitch = 0, children}) => {
   const t = f - at;
   if (t < 0 || (until !== undefined && f > until + 10)) return null;
+  const heavy = font === HEAVY;
   const s = spring({frame: t, fps: FPS, config: {damping: 17, stiffness: 320, mass: 0.8}});
   const exit = until !== undefined ? tw(f, until, until + 9, Easing.in(Easing.cubic)) : 0;
   const scale = mix(2.6, 1, s) * (1 + exit * 2.8);
+  const tilt = (1 - Math.min(1, s)) * 60;
   const opacity = Math.min(1, t / 3) * (1 - exit);
   const g = 16 * Math.exp(-t / 5) + glitch * 10;
+  const transform = `translateY(-50%) perspective(1400px) rotateX(${tilt}deg) scale(${scale})`;
   const base: React.CSSProperties = {
     position: 'absolute',
-    left: 40,
-    right: 40,
+    left: 30,
+    right: 30,
     top: y,
-    transform: `translateY(-50%) scale(${scale})`,
+    transform,
     textAlign: 'center',
     fontFamily: font,
-    fontWeight: weight,
-    fontSize: size,
-    lineHeight: 1,
-    letterSpacing: spacing,
-    color,
+    fontWeight: heavy ? 400 : 700,
+    fontSize: heavy ? size * 1.25 : size,
+    lineHeight: heavy ? 0.95 : 1,
+    letterSpacing: heavy ? spacing : '0',
     whiteSpace: 'pre-line',
+    textTransform: heavy ? 'uppercase' : undefined,
   };
+  const dark = `color-mix(in srgb, ${color} 35%, black)`;
+  const sweepStart = at + 4 + Math.max(0, Math.floor((f - at - 4) / 75)) * 75;
+  const sweep = tw(f, sweepStart, sweepStart + 26, Easing.inOut(Easing.quad));
   return (
     <>
       {t < 9 &&
         [1, 2].map((k) => (
-          <div key={k} style={{...base, opacity: (0.22 / k) * (1 - t / 9), transform: `translateY(-50%) scale(${scale * (1 + 0.22 * k * (1 - s))})`, filter: 'blur(4px)'}}>
+          <div key={k} style={{...base, color, opacity: (0.22 / k) * (1 - t / 9), transform: `${transform} scale(${1 + 0.22 * k * (1 - s)})`, filter: 'blur(4px)'}}>
             {children}
           </div>
         ))}
-      <div style={{...base, opacity, filter: exit > 0 ? `blur(${exit * 14}px)` : undefined, textShadow: g > 0.5 ? `${g}px 0 ${RED}cc, ${-g}px 0 ${CYAN}cc` : undefined}}>
+      {/* depth + chromatic split layer */}
+      <div
+        style={{
+          ...base,
+          color: dark,
+          opacity,
+          filter: exit > 0 ? `blur(${exit * 14}px)` : undefined,
+          textShadow: [
+            g > 0.5 ? `${g}px 0 ${RED}cc, ${-g}px 0 ${CYAN}cc` : '',
+            `0 4px 0 ${dark}, 0 8px 0 color-mix(in srgb, ${color} 22%, black), 0 12px 0 color-mix(in srgb, ${color} 12%, black), 0 16px 0 #000`,
+            `0 30px 50px rgba(0,0,0,.9)`,
+          ]
+            .filter(Boolean)
+            .join(', '),
+        }}
+      >
+        {children}
+      </div>
+      {/* metallic face */}
+      <div
+        style={{
+          ...base,
+          opacity,
+          color: 'transparent',
+          backgroundImage: `linear-gradient(105deg, transparent ${sweep * 140 - 30}%, rgba(255,255,255,.95) ${sweep * 140 - 20}%, transparent ${sweep * 140 - 10}%), linear-gradient(180deg, color-mix(in srgb, ${color} 45%, white) 0%, ${color} 46%, color-mix(in srgb, ${color} 60%, black) 54%, ${color} 78%, color-mix(in srgb, ${color} 60%, white) 100%)`,
+          WebkitBackgroundClip: 'text',
+          backgroundClip: 'text',
+          filter: `drop-shadow(0 0 ${18 + hitEnv(f, at, 8) * 50}px color-mix(in srgb, ${color} 70%, transparent))${exit > 0 ? ` blur(${exit * 14}px)` : ''}`,
+        }}
+      >
         {children}
       </div>
       {glitch > 0.2 &&
@@ -122,7 +160,7 @@ const Slam: React.FC<{
           const h = 4 + random(`gh${k}-${Math.floor(f / 2)}`) * 14;
           const dx = (random(`gx${k}-${Math.floor(f / 2)}`) - 0.5) * 120 * glitch;
           return (
-            <div key={`s${k}`} style={{...base, opacity, clipPath: `inset(${top}% 0 ${Math.max(0, 100 - top - h)}% 0)`, transform: `translateY(-50%) scale(${scale}) translateX(${dx}px)`, color: k === 1 ? CYAN : color}}>
+            <div key={`s${k}`} style={{...base, opacity, clipPath: `inset(${top}% 0 ${Math.max(0, 100 - top - h)}% 0)`, transform: `${transform} translateX(${dx}px)`, color: k === 1 ? CYAN : color}}>
               {children}
             </div>
           );
@@ -130,6 +168,49 @@ const Slam: React.FC<{
     </>
   );
 };
+
+/** Anamorphic lens flare streak */
+const Flare: React.FC<{f: number; at: number; y: number; color?: string}> = ({f, at, y, color = '#7fc8ff'}) => {
+  const e = hitEnv(f, at, 10);
+  if (e < 0.02) return null;
+  return (
+    <>
+      <div style={{position: 'absolute', left: -200, right: -200, top: y - 3, height: 6, background: `linear-gradient(90deg, transparent, ${color}, #fff, ${color}, transparent)`, opacity: e, boxShadow: `0 0 30px 8px ${color}`, transform: `scaleX(${0.4 + (1 - e) * 0.8})`}} />
+      <div style={{position: 'absolute', left: 540 - 180, top: y - 180, width: 360, height: 360, borderRadius: '50%', background: `radial-gradient(circle, #fff 0%, ${color}99 18%, transparent 60%)`, opacity: e * 0.9}} />
+    </>
+  );
+};
+
+/** Rotating god rays behind a title */
+const Rays: React.FC<{f: number; from: number; to: number; color: string; y?: number}> = ({f, from, to, color, y = 47}) => {
+  const o = tw(f, from, from + 12) * (1 - tw(f, to - 10, to));
+  if (o <= 0) return null;
+  return (
+    <AbsoluteFill
+      style={{
+        opacity: o * 0.55,
+        background: `repeating-conic-gradient(from ${(f - from) * 0.6}deg at 50% ${y}%, color-mix(in srgb, ${color} 55%, transparent) 0deg 3deg, transparent 3deg 15deg)`,
+        WebkitMaskImage: `radial-gradient(circle at 50% ${y}%, black 0%, transparent 60%)`,
+        maskImage: `radial-gradient(circle at 50% ${y}%, black 0%, transparent 60%)`,
+      }}
+    />
+  );
+};
+
+/** Embers rising through the whole film */
+const Embers: React.FC<{f: number; color: string}> = ({f, color}) => (
+  <>
+    {Array.from({length: 46}, (_, i) => {
+      const speed = 2 + random(`es${i}`) * 6;
+      const y = 2050 - ((f * speed + random(`ep${i}`) * 2200) % 2300);
+      const x = random(`ex${i}`) * 1080 + Math.sin(f / (20 + i) + i) * 40;
+      const size = 2 + random(`ez${i}`) * 5;
+      const flick = 0.5 + 0.5 * Math.sin(f / 3 + i * 1.7);
+      const c = i % 3 === 0 ? '#ffb347' : color;
+      return <div key={i} style={{position: 'absolute', left: x, top: y, width: size, height: size, borderRadius: '50%', background: c, boxShadow: `0 0 ${size * 3}px ${c}`, opacity: 0.35 + 0.5 * flick}} />;
+    })}
+  </>
+);
 
 const Small: React.FC<{f: number; at: number; until?: number; y: number; children: React.ReactNode; color?: string; size?: number}> = ({
   f,
@@ -350,7 +431,7 @@ export const KernelPanicEpic: React.FC = () => {
   const blackout = inRange(f, T.drop - 4, T.drop) ? 1 : 0;
 
   return (
-    <AbsoluteFill style={{background: '#030305', overflow: 'hidden'}}>
+    <AbsoluteFill style={{background: '#030305', overflow: 'hidden', filter: [T.title, T.drop, T.drop + 1, T.final, T.final + 1].includes(f) ? 'invert(1) contrast(1.3)' : undefined}}>
       <Audio src={staticFile('kp/music-epic.wav')} />
 
       <AbsoluteFill style={{transform: `translate(${sx}px, ${sy}px) scale(${(drift + punch) * (1 + zoomIn)}) rotate(${rot}deg)`, transformOrigin: '50% 47%'}}>
@@ -365,6 +446,12 @@ export const KernelPanicEpic: React.FC = () => {
             opacity: 0.8,
           }}
         />
+        {/* drifting fog */}
+        <AbsoluteFill style={{background: `radial-gradient(ellipse 60% 25% at ${30 + Math.sin(f / 60) * 20}% 70%, ${sectionColor}30, transparent 70%), radial-gradient(ellipse 50% 20% at ${70 + Math.cos(f / 50) * 20}% 25%, ${sectionColor}22, transparent 70%)`}} />
+        <Rays f={f} from={T.title} to={T.layers[0]} color={RED} y={46} />
+        <Rays f={f} from={T.drop} to={T.causes[0]} color="#ffffff" />
+        <Rays f={f} from={T.final} to={T.end} color={BLUE} y={48} />
+        <Embers f={f} color={sectionColor} />
 
         {/* 1. hook */}
         {f < T.title + 10 && (
@@ -570,6 +657,22 @@ export const KernelPanicEpic: React.FC = () => {
         )}
       </AbsoluteFill>
 
+      {/* lens flares on the big hits */}
+      <Flare f={f} at={T.dies} y={1620} color={RED} />
+      <Flare f={f} at={T.title} y={870} color={RED} />
+      <Flare f={f} at={T.red} y={1135} color={RED} />
+      <Flare f={f} at={T.drop} y={900} color="#ffffff" />
+      {T.causes.map((h, i) => (
+        <Flare key={h} f={f} at={h} y={960} color={CAUSES[i].color} />
+      ))}
+      <Flare f={f} at={T.file} y={900} color={RED} />
+      <Flare f={f} at={T.fix[3]} y={640} color={RED} />
+      <Flare f={f} at={T.final} y={900} color={BLUE} />
+      {/* cinematic bars close in before the drop and the ending */}
+      {[0, 1].map((k) => {
+        const h = 230 * Math.max(tw(f, T.but, T.zoomIn) * (1 - tw(f, T.drop, T.drop + 8)), tw(f, 1170, T.final) * (1 - tw(f, T.final, T.final + 10)));
+        return <div key={k} style={{position: 'absolute', left: 0, right: 0, height: h, [k ? 'bottom' : 'top']: 0, background: '#000'}} />;
+      })}
       {/* overlays */}
       <AbsoluteFill style={{background: '#fff', opacity: flash * 0.75, mixBlendMode: 'overlay'}} />
       <AbsoluteFill style={{background: `repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0px, rgba(0,0,0,.18) 2px, transparent 2px, transparent 5px)`, opacity: 0.5}} />

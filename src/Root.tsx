@@ -2,6 +2,7 @@ import '@fontsource/dm-sans/400.css';
 import '@fontsource/dm-sans/500.css';
 import '@fontsource/dm-sans/700.css';
 import '@fontsource/dm-sans/400-italic.css';
+import '@fontsource/anton/400.css';
 import {Composition, Still} from 'remotion';
 import {DesignLanguage, DURATION} from './DesignLanguage';
 import {OldVsNew, OLD_VS_NEW_DURATION} from './OldVsNew';

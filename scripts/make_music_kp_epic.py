@@ -18,12 +18,15 @@ sys.path.insert(0, os.path.dirname(__file__))
 from synth import (  # noqa: E402
     Track,
     braam,
+    brass,
     choir,
+    clang,
     crash,
     drone,
     hat,
     reverse_swell,
     riser,
+    snare_roll,
     string_note,
     sub_boom,
     taiko,
@@ -151,5 +154,43 @@ tr.add(crash(4.0), 40.0, 0.9)
 tr.add(braam([26, 38, 45, 50, 53, 57, 62], 4.0, swell=0.06, peak=3400), 40.0, 1.0)
 tr.add(choir([62, 65, 69, 74], 4.0), 40.0, 1.2)
 
-tr.write('public/kp/music-epic.wav', reverb=0.4, fade_out=2.0, hall=3.5, decay=1.9)
+# ---------- extra weight (v2: "more epic") ----------
+BIG = [4.0, 18.0, 22.0, 24.0, 26.0, 28.0, 32.0, 40.0]
+for t in BIG + [2.0, 15.0]:
+    tr.add(clang(2.5, 160 if t in (18.0, 40.0) else 210), t, 0.9)
+# octave-down braams under the biggest hits
+for t, chord in [(4.0, DM), (18.0, DM), (40.0, DM)]:
+    tr.add(braam([n - 12 for n in chord[:3]], 3.5, swell=0.05, peak=1800), t, 0.9)
+# war drums: low taiko on every beat through the loud sections
+for a, b in [(18.0, 22.0), (22.0, 30.0), (34.0, 40.0)]:
+    t = a
+    while t < b - 0.01:
+        tr.add(taiko(38, 4), t, 0.55)
+        t += 0.5
+# bigger choir
+tr.add(choir([50, 57, 62, 65, 69], 4.0), 18.0, 1.1)
+tr.add(choir([50, 57, 62, 65, 69, 74], 4.0), 40.0, 1.3)
+for t, ch in [(22.0, [50, 57, 62]), (24.0, [46, 53, 58]), (26.0, [53, 57, 60]), (28.0, [48, 55, 60])]:
+    tr.add(choir(ch, 2.0), t, 0.8)
+# military snare rolls into the drops
+snare_roll(tr, 15.5, 17.9, 0.7)
+snare_roll(tr, 38.0, 39.95, 0.7)
+snare_roll(tr, 3.0, 3.95, 0.45)
+tr.silence(17.9, 18.0)
+# longer swells into the drops
+tr.add(reverse_swell(4.0), 14.0, 0.6)
+tr.add(reverse_swell(3.0), 37.0, 0.7)
+# heroic brass theme over the causes and the ending (D minor)
+theme = [(62, 1.0), (65, 0.5), (69, 0.5), (67, 1.0), (65, 0.5), (64, 0.5), (62, 1.5), (57, 0.5),
+         (58, 1.0), (62, 0.5), (65, 0.5), (64, 1.0), (60, 1.0)]
+t = 22.0
+for n, d in theme:
+    tr.add(brass(n, d * 1.0 + 0.05), t, 0.55, pan=-0.1)
+    tr.add(brass(n - 12, d * 1.0 + 0.05), t, 0.4, pan=0.1)
+    t += d
+for n, d, at in [(65, 1.0, 34.0), (69, 1.0, 35.0), (72, 2.0, 36.0), (70, 1.0, 38.0), (69, 1.0, 39.0), (74, 4.0, 40.0)]:
+    tr.add(brass(n, d + 0.05), at, 0.6)
+    tr.add(brass(n - 12, d + 0.05), at, 0.45)
+
+tr.write('public/kp/music-epic.wav', reverb=0.45, fade_out=2.0, hall=4.0, decay=1.7, drive=2.4)
 print('ok')
