@@ -54,7 +54,18 @@ const SCENES: Scene[] = [
     ),
     day: 'FRIDAY 9 OCTOBER',
   },
-  {start: 120, len: 120, color: RED, deep: '#6b0b0b', title: <>minitravels</>, day: 'SATURDAY 10 OCTOBER'},
+  {
+    start: 120,
+    len: 120,
+    color: RED,
+    deep: '#6b0b0b',
+    title: (
+      <>
+        minitravels <span style={{color: RED, textShadow: `0 0 40px ${RED}88`}}>2.0</span>
+      </>
+    ),
+    day: 'SATURDAY 10 OCTOBER',
+  },
   {start: 240, len: 150, color: BLUE, deep: '#0b236b', title: <>One more thing</>, day: 'SUNDAY 11 OCTOBER'},
 ];
 
@@ -126,7 +137,7 @@ export const Promo: React.FC = () => {
   const zOut = zi < ZONES.length - 1 ? tw(zl, zoneLen - 4, zoneLen) : 0;
   const hitFlash = [0, 120, 240].reduce((a, h) => Math.max(a, f < h ? 0 : Math.exp(-(f - h) / 5)), 0);
 
-  const titleSize = vertical ? 140 : 190;
+  const titleSize = vertical ? 126 : 190;
   const small = vertical ? 40 : 42;
   const timeSize = vertical ? 140 : 140;
 
