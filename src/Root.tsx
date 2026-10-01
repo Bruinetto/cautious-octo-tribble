@@ -7,6 +7,7 @@ import {DesignLanguage, DURATION} from './DesignLanguage';
 import {OldVsNew, OLD_VS_NEW_DURATION} from './OldVsNew';
 import {Promo, PROMO_DURATION} from './Promo';
 import {Thumbnail} from './Thumbnail';
+import {DuoAnnounce, DUO_DURATION} from './DuoAnnounce';
 
 export const Root = () => (
   <>
@@ -30,5 +31,7 @@ export const Root = () => (
   <Composition id="PromoHorizontal" component={Promo} durationInFrames={PROMO_DURATION} fps={30} width={1920} height={1080} />
   <Still id="ThumbnailHorizontal" component={Thumbnail} width={1280} height={720} />
   <Still id="ThumbnailVertical" component={Thumbnail} width={1080} height={1920} />
+  <Composition id="DuoVertical" component={DuoAnnounce} durationInFrames={DUO_DURATION} fps={30} width={1080} height={1920} />
+  <Composition id="DuoHorizontal" component={DuoAnnounce} durationInFrames={DUO_DURATION} fps={30} width={1920} height={1080} />
   </>
 );
