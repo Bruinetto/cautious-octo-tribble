@@ -3,6 +3,7 @@ import {
   AbsoluteFill,
   Audio,
   Easing,
+  Img,
   continueRender,
   delayRender,
   interpolate,
@@ -573,14 +574,8 @@ export const KernelPanicEpic: React.FC = () => {
       <AbsoluteFill style={{background: '#fff', opacity: flash * 0.75, mixBlendMode: 'overlay'}} />
       <AbsoluteFill style={{background: `repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0px, rgba(0,0,0,.18) 2px, transparent 2px, transparent 5px)`, opacity: 0.5}} />
       <AbsoluteFill style={{background: 'radial-gradient(circle at 50% 47%, transparent 50%, rgba(0,0,0,.7) 100%)'}} />
-      <AbsoluteFill style={{opacity: 0.08, mixBlendMode: 'overlay'}}>
-        <svg width={1080} height={1920}>
-          <filter id="g5">
-            <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed={f % 12} />
-          </filter>
-          <rect width="100%" height="100%" filter="url(#g5)" />
-        </svg>
-      </AbsoluteFill>
+      {/* film grain: pre-rendered noise frames (much cheaper than an SVG turbulence filter) */}
+      <Img src={staticFile(`kp/grain${f % 6}.png`)} style={{position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.1, mixBlendMode: 'overlay'}} />
       <AbsoluteFill style={{background: '#000', opacity: Math.max(blackout, tw(f, T.end - 30, T.end), 1 - tw(f, 0, 8))}} />
     </AbsoluteFill>
   );
