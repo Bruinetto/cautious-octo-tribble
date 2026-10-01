@@ -17,12 +17,14 @@ export const PROMO_DURATION = 390; // 13s @ 30fps
 const FPS = 30;
 const FONT = "'DM Sans', sans-serif";
 
-// All three events at 16:00 Italian time (CEST, UTC+2), weekend of 9–11 Oct 2026.
+// All three events at 16:00 Italian time (CEST, UTC+2) = 10:00 AM New York (EDT), weekend of 9–11 Oct 2026.
 // Other cities converted with the IANA tz database.
+// Main time shown big: New York. The others rotate underneath, one at a time.
+const MAIN = {city: 'NEW YORK', time: '10:00 AM'};
 const ZONES = [
+  {city: 'ITALY', time: '16:00'},
   {city: 'LONDON', time: '15:00'},
-  {city: 'NEW YORK', time: '10:00'},
-  {city: 'LOS ANGELES', time: '07:00'},
+  {city: 'LOS ANGELES', time: '7:00 AM'},
   {city: 'TOKYO', time: '23:00'},
 ];
 
@@ -52,7 +54,7 @@ const SCENES: Scene[] = [
     ),
     day: 'FRIDAY 9 OCTOBER',
   },
-  {start: 120, len: 120, color: RED, deep: '#6b0b0b', title: <>ministravels</>, day: 'SATURDAY 10 OCTOBER'},
+  {start: 120, len: 120, color: RED, deep: '#6b0b0b', title: <>minitravels</>, day: 'SATURDAY 10 OCTOBER'},
   {start: 240, len: 150, color: BLUE, deep: '#0b236b', title: <>One more thing</>, day: 'SUNDAY 11 OCTOBER'},
 ];
 
@@ -186,12 +188,13 @@ export const Promo: React.FC = () => {
             transform: `scale(${0.7 + 0.3 * timeP})`,
             filter: `blur(${exit * 10}px)`,
             display: 'flex',
-            alignItems: 'baseline',
-            gap: 22,
+            flexDirection: vertical ? 'column' : 'row',
+            alignItems: vertical ? 'center' : 'baseline',
+            gap: vertical ? 4 : 22,
           }}
         >
-          <span style={{fontWeight: 700, fontSize: timeSize, letterSpacing: '-0.02em', color: sc.color}}>16:00</span>
-          <span style={{fontWeight: 700, fontSize: small, letterSpacing: '0.25em'}}>ITALY</span>
+          <span style={{fontWeight: 700, fontSize: timeSize, letterSpacing: '-0.02em', color: sc.color}}>{MAIN.time}</span>
+          <span style={{fontWeight: 700, fontSize: small, letterSpacing: '0.25em'}}>{MAIN.city}</span>
         </div>
 
         {/* other time zones, one at a time */}

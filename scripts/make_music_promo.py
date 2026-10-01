@@ -1,6 +1,6 @@
-"""Soundtrack for the barcly / ministravels / One more thing promo (13s, 120 BPM).
+"""Soundtrack for the barcly / minitravels / One more thing promo (13s, 120 BPM).
   0s     barcly 2.0        hit, beat starts
-  4s     ministravels      hit, beat continues with a new chord
+  4s     minitravels      hit, beat continues with a new chord
   7.5-8s                   silence (dramatic pause)
   8s     One more thing    big hit, wide pad, beat back in
   12-13s                   fade out
@@ -136,7 +136,7 @@ groove(0.0, 1, 40, [52, 55, 59])
 groove(2.0, 1, 36, [48, 52, 55])
 add(whoosh(0.8), 3.2, 0.6)
 
-# ministravels (red): G -> D, a bit more energy
+# minitravels (red): G -> D, a bit more energy
 add(hit(1.8, 0.8), 4.0)
 add(pad([55, 59, 62], 2.0), 4.0, 0.7)
 add(pad([50, 54, 57], 1.5), 6.0, 0.7)
