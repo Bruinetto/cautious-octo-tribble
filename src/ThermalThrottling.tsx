@@ -1,11 +1,15 @@
 import React, {useEffect, useState} from 'react';
 import {AbsoluteFill, Audio, Easing, continueRender, delayRender, interpolateColors, staticFile, useCurrentFrame} from 'remotion';
-import {BigTitle, C, Dots, FONT, Headline, Label, Pill, PillRow, SERIES_T as T, Signature, Slam, hitEnv, mix, sp, tw} from './explained';
+import {BigTitle, C, Dots, FONT, Headline, Label, Pill, PillRow, SERIES_T, Signature, Slam, hitEnv, mix, sp, tw} from './explained';
 import {HomeGrid, IPhone, PHONE_W, SignalBars, StatusBar} from './IPhoneMock';
 
-// "Explained" episode: thermal throttling. 36s vertical, series theme music.
-// Behaviour listed follows Apple's "If your iPhone gets too hot or too cold" support page.
+// "Explained" episode: thermal throttling. 44s vertical: the series layout plus an extra
+// 32-40s section on the iPhone 18 Pro vapor chamber (music: scripts/make_music_thermal.py).
+// Behaviour listed follows Apple's "If your iPhone gets too hot or too cold" support page;
+// vapor chamber figures are Apple's (Newsroom, "Apple debuts iPhone 18 Pro and iPhone 18 Pro Max").
+const T = {...SERIES_T, vc: 960, vcSteps: [1020, 1080, 1140], final: 1200, end: 1320};
 export const THERMAL_DURATION = T.end;
+const CYAN = '#64d2ff';
 
 const HITS: [number, number][] = [
   [T.drop, 1],
@@ -14,6 +18,8 @@ const HITS: [number, number][] = [
   [T.spot, 0.6],
   ...T.parts.map((h): [number, number] => [h, 0.35]),
   ...T.fix.map((h): [number, number] => [h, 0.45]),
+  [T.vc, 0.9],
+  ...T.vcSteps.map((h): [number, number] => [h, 0.6]),
   [T.final, 1],
 ];
 
@@ -171,6 +177,84 @@ const PhoneDemo: React.FC<{f: number}> = ({f}) => {
   );
 };
 
+/** Flat vapor chamber: liquid evaporates over the hot chip, spreads to the cool edges and returns */
+const VaporDiagram: React.FC<{f: number}> = ({f}) => {
+  const a = T.vcSteps[0];
+  const b = T.vcSteps[1];
+  if (f < a - 2 || f > b + 6) return null;
+  const p = sp(f, a, 16, 160);
+  const o = tw(f, b - 6, b + 2);
+  const lt = f - a;
+  const W = 900;
+  const H = 300;
+  const steps = [
+    {at: a + 10, t: 'Evaporates', c: C.orange},
+    {at: a + 22, t: 'Spreads', c: '#ffffff'},
+    {at: a + 34, t: 'Condenses', c: CYAN},
+  ];
+  return (
+    <div style={{position: 'absolute', left: 90, top: 760, width: W, opacity: Math.min(1, p) * (1 - o), transform: `translateY(${(1 - Math.min(1, p)) * 60}px)`}}>
+      <div style={{position: 'relative', width: W, height: H, borderRadius: 60, border: `3px solid ${CYAN}`, background: 'linear-gradient(180deg, rgba(100,210,255,.10), rgba(100,210,255,.03))', overflow: 'hidden'}}>
+        {/* the chip, glowing hot underneath the middle */}
+        <div style={{position: 'absolute', left: W / 2 - 110, bottom: 24, width: 220, height: 90, borderRadius: 20, background: `color-mix(in srgb, ${C.orange} 35%, #1c1c1e)`, border: `2px solid ${C.orange}`, boxShadow: `0 0 ${50 + 20 * Math.sin(f / 4)}px ${C.orange}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FONT, fontWeight: 700, fontSize: 36, color: '#fff'}}>
+          A20 Pro
+        </div>
+        {/* vapor particles */}
+        {Array.from({length: 46}, (_, i) => {
+          const side = i % 2 ? 1 : -1;
+          const ph = ((lt * (0.022 + (i % 5) * 0.003) + i * 0.137) % 1 + 1) % 1;
+          let x: number;
+          let y: number;
+          let col: string;
+          if (ph < 0.6) {
+            const q = ph / 0.6; // rising from the chip and spreading out along the top
+            x = W / 2 + side * q * (W / 2 - 50);
+            y = H - 120 - Math.sin(Math.min(1, q * 2) * Math.PI / 2) * 120 - 20;
+            col = interpolateColors(q, [0, 1], [C.orange, CYAN]);
+          } else {
+            const q = (ph - 0.6) / 0.4; // condensed liquid flowing back along the bottom
+            x = W / 2 + side * (1 - q) * (W / 2 - 50);
+            y = H - 40;
+            col = CYAN;
+          }
+          const size = ph < 0.6 ? 12 : 8;
+          return <div key={i} style={{position: 'absolute', left: x - size / 2, top: y - size / 2, width: size, height: size, borderRadius: '50%', background: col, boxShadow: `0 0 12px ${col}`, opacity: 0.9}} />;
+        })}
+      </div>
+      <div style={{display: 'flex', justifyContent: 'center', gap: 18, marginTop: 50}}>
+        {steps.map((s) => (
+          <Pill key={s.t} p={sp(f, s.at, 14, 220)} color={s.c === '#ffffff' ? undefined : s.c} size={40}>
+            {s.t}
+          </Pill>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/** iPhone 17 Pro vs iPhone 18 Pro vapor chamber area (3x) */
+const AreaCompare: React.FC<{f: number}> = ({f}) => {
+  const a = T.vcSteps[1];
+  const b = T.vcSteps[2];
+  if (f < a - 2 || f > b + 6) return null;
+  const o = tw(f, b - 6, b + 2);
+  const small = sp(f, a + 6, 16, 180);
+  const big = sp(f, a + 16, 13, 150);
+  const k = Math.sqrt(3);
+  const box = (w: number, h: number, p: number, label: string, col: string) => (
+    <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22}}>
+      <div style={{width: w * Math.min(1.05, p), height: h * Math.min(1.05, p), borderRadius: 34, border: `3px solid ${col}`, background: `color-mix(in srgb, ${col} 14%, transparent)`, opacity: Math.min(1, p * 1.5)}} />
+      <div style={{fontFamily: FONT, fontWeight: 700, fontSize: 40, color: col, opacity: Math.min(1, p)}}>{label}</div>
+    </div>
+  );
+  return (
+    <div style={{position: 'absolute', left: 0, right: 0, top: 1020, height: 420, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 60, opacity: 1 - o}}>
+      {box(280, 168, small, 'iPhone 17 Pro', C.grey)}
+      {box(280 * k, 168 * k, big, 'iPhone 18 Pro', CYAN)}
+    </div>
+  );
+};
+
 export const ThermalThrottling: React.FC = () => {
   const f = useCurrentFrame();
   const [handle] = useState(() => delayRender('fonts'));
@@ -181,20 +265,20 @@ export const ThermalThrottling: React.FC = () => {
   const [heatAt, sourcesAt, fanAt, hotAt] = T.intro;
 
   const punch = HITS.reduce((a, [h, s]) => a + hitEnv(f, h, 9) * s * 0.035, 0);
-  const shake = hitEnv(f, T.drop, 7) * 20 + hitEnv(f, T.final, 7) * 18 + hitEnv(f, T.drop + 4, 5) * 10;
-  const impactZoom = 0.14 * hitEnv(f, T.drop, 10) + 0.12 * hitEnv(f, T.final, 10);
-  const flash = Math.max(hitEnv(f, T.drop, 4), hitEnv(f, T.final, 4)) * 0.45;
+  const shake = hitEnv(f, T.drop, 7) * 20 + hitEnv(f, T.final, 7) * 18 + hitEnv(f, T.drop + 4, 5) * 10 + hitEnv(f, T.vc, 7) * 14;
+  const impactZoom = 0.14 * hitEnv(f, T.drop, 10) + 0.12 * hitEnv(f, T.final, 10) + 0.1 * hitEnv(f, T.vc, 10);
+  const flash = Math.max(hitEnv(f, T.drop, 4), hitEnv(f, T.final, 4), hitEnv(f, T.vc, 4) * 0.8) * 0.45;
   const sx = Math.sin(f * 2.7) * shake;
   const sy = Math.cos(f * 3.1) * shake * 0.8;
 
   const intro = f < T.drop;
   const introOut = tw(f, T.introOut, T.drop - 4);
   const tint =
-    f < T.drop ? 'transparent' : f < T.cards[0] ? C.orange : f < T.spot ? CARDS[Math.min(3, Math.floor((f - T.cards[0]) / 60))].color : f < T.fix[0] ? C.green : f < T.fix[3] ? C.orange : f < T.final ? C.green : C.orange;
+    f < T.drop ? 'transparent' : f < T.cards[0] ? C.orange : f < T.spot ? CARDS[Math.min(3, Math.floor((f - T.cards[0]) / 60))].color : f < T.fix[0] ? C.green : f < T.fix[3] ? C.orange : f < T.vc ? C.green : f < T.final ? CYAN : C.orange;
 
   return (
     <AbsoluteFill style={{background: '#000', overflow: 'hidden', fontFamily: FONT}}>
-      <Audio src={staticFile('kp/music-v3.wav')} />
+      <Audio src={staticFile('kp/music-thermal.wav')} />
       <AbsoluteFill style={{transform: `translate(${sx}px, ${sy}px) scale(${1 + punch + impactZoom})`}}>
         {!intro && <AbsoluteFill style={{background: `radial-gradient(ellipse 85% 45% at 50% 50%, color-mix(in srgb, ${tint} 22%, transparent), transparent 70%)`}} />}
 
@@ -311,18 +395,57 @@ export const ThermalThrottling: React.FC = () => {
         <Slam f={f} at={T.fix[2]} until={T.fix[3] - 6} y={960} size={150}>
           {'Case off\nwhile\ncharging.'}
         </Slam>
-        <Slam f={f} at={T.fix[3]} until={T.final - 8} y={700} size={130}>
+        <Slam f={f} at={T.fix[3]} until={T.vc - 8} y={700} size={130}>
           {'Not a\ndefect.'}
         </Slam>
-        <Slam f={f} at={T.fix[4]} until={T.final - 8} y={1000} size={130} color={C.green}>
+        <Slam f={f} at={T.fix[4]} until={T.vc - 8} y={1000} size={130} color={C.green}>
           {'It’s\nprotection.'}
         </Slam>
-        {f >= T.fix[5] && f < T.final + 8 && (
-          <PillRow f={f} until={T.final - 8} y={1240}>
+        {f >= T.fix[5] && f < T.vc + 8 && (
+          <PillRow f={f} until={T.vc - 8} y={1240}>
             <Pill p={sp(f, T.fix[5], 14, 220)} color={C.orange} size={52}>
               Heat ages batteries
             </Pill>
           </PillRow>
+        )}
+
+        {/* ---------- 32-40s: iPhone 18 Pro vapor chamber ---------- */}
+        <Label f={f} at={T.vc} until={T.final - 8} y={250} color={CYAN}>
+          NEW ON IPHONE 18 PRO
+        </Label>
+        <BigTitle f={f} at={T.vc} until={T.vcSteps[0] - 8} first="Vapor" second="chamber." color={CYAN} />
+        <Slam f={f} at={T.vcSteps[0]} until={T.vcSteps[1] - 6} y={470} size={66} weight={700} spacing="-0.02em">
+          {'Heat turns liquid into vapor.\nIt spreads, cools, and returns.'}
+        </Slam>
+        <VaporDiagram f={f} />
+        <Slam f={f} at={T.vcSteps[1]} until={T.vcSteps[2] - 6} y={640} size={360} color={CYAN}>
+          3×
+        </Slam>
+        {f >= T.vcSteps[1] && f < T.vcSteps[2] + 6 && (
+          <div style={{position: 'absolute', left: 0, right: 0, top: 860, textAlign: 'center', fontFamily: FONT, fontWeight: 600, fontSize: 48, color: C.grey, opacity: tw(f, T.vcSteps[1] + 6, T.vcSteps[1] + 16) * (1 - tw(f, T.vcSteps[2] - 6, T.vcSteps[2]))}}>
+            the surface area of iPhone 17 Pro
+          </div>
+        )}
+        <AreaCompare f={f} />
+        <Slam f={f} at={T.vcSteps[2]} until={T.final - 8} y={760} size={175} color={CYAN}>
+          Up to 40%
+        </Slam>
+        {f >= T.vcSteps[2] && f < T.final + 6 && (
+          <>
+            <div style={{position: 'absolute', left: 0, right: 0, top: 880, textAlign: 'center', fontFamily: FONT, fontWeight: 600, fontSize: 52, color: C.text, opacity: tw(f, T.vcSteps[2] + 6, T.vcSteps[2] + 16) * (1 - tw(f, T.final - 8, T.final))}}>
+              more sustained performance
+            </div>
+            <div style={{position: 'absolute', left: 0, right: 0, top: 1060, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22, opacity: 1 - tw(f, T.final - 8, T.final)}}>
+              <Pill p={sp(f, T.vcSteps[2] + 14, 14, 220)} color={CYAN} size={44}>
+                A20 Pro sits directly on it
+              </Pill>
+              {f >= T.vcSteps[2] + 26 && (
+                <Pill p={sp(f, T.vcSteps[2] + 26, 14, 220)} size={44}>
+                  Chip and memory side by side
+                </Pill>
+              )}
+            </div>
+          </>
         )}
 
         {/* ---------- 32s: final ---------- */}
