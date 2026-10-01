@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {AbsoluteFill, Audio, Easing, continueRender, delayRender, interpolateColors, staticFile, useCurrentFrame} from 'remotion';
-import {BigTitle, C, Card, Dots, FONT, Headline, Label, Pill, PillRow, SERIES_T as T, Signature, Slam, hitEnv, mix, sp, tw} from './explained';
+import {BigTitle, C, Dots, FONT, Headline, Label, Pill, PillRow, SERIES_T as T, Signature, Slam, hitEnv, mix, sp, tw} from './explained';
+import {HomeGrid, IPhone, PHONE_W, SignalBars, StatusBar} from './IPhoneMock';
 
 // "Explained" episode: thermal throttling. 36s vertical, series theme music.
 // Behaviour listed follows Apple's "If your iPhone gets too hot or too cold" support page.
@@ -62,6 +63,111 @@ const Gauge: React.FC<{f: number}> = ({f}) => {
         <div style={{width: `${level * 100}%`, height: '100%', borderRadius: 22, background: `linear-gradient(90deg, ${C.green}, ${col})`}} />
       </div>
     </div>
+  );
+};
+
+/** One iPhone that shows, in turn, the four things iOS does when it is too hot */
+const PhoneDemo: React.FC<{f: number}> = ({f}) => {
+  if (f < T.cards[0] - 2 || f > T.spot + 4) return null;
+  const enter = sp(f, T.cards[0], 18, 120);
+  const exit = tw(f, T.spot - 10, T.spot + 2, Easing.in(Easing.cubic));
+  const lt = (i: number) => f - T.cards[i];
+  const show = (i: number) => {
+    const a = T.cards[i];
+    const b = i < 3 ? T.cards[i + 1] : T.spot + 10;
+    return tw(f, a - 4, a + 4) * (1 - (i < 3 ? tw(f, b - 4, b + 4) : 0));
+  };
+  const state = Math.max(0, Math.min(3, Math.floor((f - T.cards[0]) / 60)));
+
+  // 1. performance: FPS drop
+  const fpsP = tw(lt(0), 8, 42, Easing.inOut(Easing.quad));
+  const fps = Math.round(60 - 30 * fpsP);
+  const chart = Array.from({length: 28}, (_, k) => {
+    const x = (k / 27) * 400;
+    const drop = Math.min(1, Math.max(0, (k / 27) * 1.4 - 0.25));
+    const y = 30 + drop * 120 + Math.sin(k * 1.7) * 8;
+    return `${x},${y}`;
+  }).join(' ');
+  // 2. brightness
+  const dim = tw(lt(1), 6, 40, Easing.inOut(Easing.quad));
+  // 3. charging banner
+  const banner = sp(f, T.cards[2] + 10, 16, 160);
+  // 4. signal
+  const bars = 4 - Math.round(tw(lt(3), 6, 40) * 3);
+
+  return (
+    <IPhone style={{left: (1080 - PHONE_W) / 2, top: 600, opacity: Math.min(1, enter * 1.4) * (1 - exit), transform: `translateY(${(1 - enter) * 700 + exit * 400}px) scale(${1 + hitEnv(f, T.cards[state], 8) * 0.015})`}}>
+      {/* 1. less performance */}
+      <div style={{position: 'absolute', inset: 0, opacity: show(0), background: 'linear-gradient(180deg, #0b0f1a, #141826)', fontFamily: FONT}}>
+        <div style={{position: 'absolute', top: 150, left: 0, right: 0, textAlign: 'center', fontSize: 30, fontWeight: 600, color: C.grey, letterSpacing: '0.2em'}}>FRAME RATE</div>
+        <div style={{position: 'absolute', top: 200, left: 0, right: 0, textAlign: 'center', fontSize: 190, fontWeight: 700, letterSpacing: '-0.04em', color: fpsP < 0.5 ? C.green : C.orange}}>{fps}</div>
+        <div style={{position: 'absolute', top: 410, left: 0, right: 0, textAlign: 'center', fontSize: 34, fontWeight: 600, color: C.text}}>FPS</div>
+        <svg width={400} height={190} style={{position: 'absolute', left: 38, top: 490, clipPath: `inset(0 ${100 - fpsP * 100}% 0 0)`}}>
+          <polyline points={chart} fill="none" stroke={C.orange} strokeWidth={6} strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        {['CPU', 'GPU'].map((n, k) => (
+          <div key={n} style={{position: 'absolute', left: 44, right: 44, top: 720 + k * 90}}>
+            <div style={{display: 'flex', justifyContent: 'space-between', fontSize: 28, fontWeight: 600, color: C.grey}}>
+              <span>{n}</span>
+              <span>{Math.round(100 - 45 * fpsP)}%</span>
+            </div>
+            <div style={{marginTop: 10, height: 18, borderRadius: 9, background: '#2c2c2e'}}>
+              <div style={{width: `${100 - 45 * fpsP}%`, height: '100%', borderRadius: 9, background: fpsP < 0.5 ? C.green : C.orange}} />
+            </div>
+          </div>
+        ))}
+        <StatusBar />
+      </div>
+
+      {/* 2. dimmer display */}
+      <div style={{position: 'absolute', inset: 0, opacity: show(1)}}>
+        <HomeGrid />
+        <div style={{position: 'absolute', inset: 0, background: '#000', opacity: dim * 0.65}} />
+        <div style={{position: 'absolute', right: 40, top: 300, width: 130, height: 380, borderRadius: 44, background: 'rgba(60,60,64,.75)', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,.4)'}}>
+          <div style={{position: 'absolute', left: 0, right: 0, bottom: 0, height: `${mix(88, 25, dim)}%`, background: '#f5f5f7'}} />
+          <div style={{position: 'absolute', left: 0, right: 0, bottom: 26, textAlign: 'center', fontSize: 52, color: '#888'}}>☀</div>
+        </div>
+        <StatusBar />
+      </div>
+
+      {/* 3. charging on hold */}
+      <div style={{position: 'absolute', inset: 0, opacity: show(2), background: 'linear-gradient(170deg, #182848 0%, #3b1e54 60%, #6a2c47 100%)', fontFamily: FONT}}>
+        <div style={{position: 'absolute', top: 120, left: 0, right: 0, textAlign: 'center', fontSize: 32, fontWeight: 600, color: 'rgba(255,255,255,.85)'}}>Thursday 1 October</div>
+        <div style={{position: 'absolute', top: 150, left: 0, right: 0, textAlign: 'center', fontSize: 170, fontWeight: 700, color: '#fff', letterSpacing: '-0.03em'}}>9:41</div>
+        <div
+          style={{
+            position: 'absolute',
+            left: 22,
+            right: 22,
+            top: 470,
+            borderRadius: 40,
+            background: 'rgba(30,30,34,.88)',
+            padding: '28px 30px',
+            boxShadow: '0 20px 50px rgba(0,0,0,.45)',
+            opacity: Math.min(1, banner * 1.5),
+            transform: `translateY(${(1 - banner) * -120}px) scale(${0.92 + 0.08 * Math.min(1, banner)})`,
+          }}
+        >
+          <div style={{display: 'flex', alignItems: 'center', gap: 16}}>
+            <div style={{width: 52, height: 52, borderRadius: 14, background: C.green, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30}}>⚡</div>
+            <div style={{fontSize: 32, fontWeight: 700, color: '#fff'}}>Charging On Hold</div>
+          </div>
+          <div style={{marginTop: 14, fontSize: 28, lineHeight: 1.3, color: 'rgba(255,255,255,.8)'}}>Charging will resume when iPhone returns to normal temperature.</div>
+        </div>
+        <StatusBar battery={0.62} charging={banner < 0.5} batteryColor={banner < 0.5 ? C.green : '#fff'} />
+      </div>
+
+      {/* 4. weaker signal */}
+      <div style={{position: 'absolute', inset: 0, opacity: show(3)}}>
+        <HomeGrid />
+        <div style={{position: 'absolute', inset: 0, background: '#000', opacity: 0.45}} />
+        <div style={{position: 'absolute', left: 60, right: 60, top: 300, height: 360, borderRadius: 48, background: 'rgba(28,28,30,.92)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 30, fontFamily: FONT}}>
+          <SignalBars bars={bars} size={140} color={bars <= 1 ? C.orange : '#fff'} />
+          <div style={{fontSize: 34, fontWeight: 600, color: bars <= 1 ? C.orange : C.text}}>{bars <= 1 ? 'Low-power mode' : 'Cellular'}</div>
+        </div>
+        <StatusBar bars={bars} barsColor={bars <= 1 ? C.orange : '#fff'} />
+      </div>
+    </IPhone>
   );
 };
 
@@ -143,13 +249,26 @@ export const ThermalThrottling: React.FC = () => {
         </Slam>
 
         {/* ---------- 14-22s: what your iPhone does ---------- */}
-        <Label f={f} at={T.cards[0]} until={T.spot - 8} y={330}>
+        <Label f={f} at={T.cards[0]} until={T.spot - 8} y={250}>
           WHAT YOUR IPHONE DOES
         </Label>
-        {CARDS.map((c, i) => (
-          <Card key={c.n} f={f} at={T.cards[i]} until={i < 3 ? T.cards[i + 1] - 6 : T.spot - 8} n={c.n} title={c.title} sub={c.sub} color={c.color} titleSize={118} />
-        ))}
-        <Dots f={f} starts={T.cards} colors={CARDS.map((c) => c.color)} until={T.spot} y={1420} />
+        {CARDS.map((c, i) => {
+          const until = i < 3 ? T.cards[i + 1] - 4 : T.spot - 8;
+          return (
+            <React.Fragment key={c.n}>
+              <Slam f={f} at={T.cards[i]} until={until} y={400} size={104} color={c.color}>
+                {c.title.replace('\n', ' ')}
+              </Slam>
+              {f >= T.cards[i] && f < until + 8 && (
+                <div style={{position: 'absolute', left: 0, right: 0, top: 478, textAlign: 'center', fontFamily: FONT, fontWeight: 500, fontSize: 42, color: C.grey, opacity: tw(f, T.cards[i] + 4, T.cards[i] + 14) * (1 - tw(f, until, until + 6))}}>
+                  {c.sub}
+                </div>
+              )}
+            </React.Fragment>
+          );
+        })}
+        <PhoneDemo f={f} />
+        <Dots f={f} starts={T.cards} colors={CARDS.map((c) => c.color)} until={T.spot} y={1720} />
 
         {/* ---------- 22-26s: comfort zone ---------- */}
         <Label f={f} at={T.spot} until={T.fix[0] - 8} y={560}>
