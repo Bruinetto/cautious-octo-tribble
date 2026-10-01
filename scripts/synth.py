@@ -39,11 +39,11 @@ class Track:
         self.L[i:j] = 0
         self.R[i:j] = 0
 
-    def write(self, path, reverb=0.25, fade_out=1.2):
-        ir_n = int(1.8 * SR)
+    def write(self, path, reverb=0.25, fade_out=1.2, hall=1.8, decay=3.3):
+        ir_n = int(hall * SR)
         ir_t = np.arange(ir_n) / SR
-        irL = rng.normal(0, 1, ir_n) * np.exp(-ir_t * 3.3)
-        irR = rng.normal(0, 1, ir_n) * np.exp(-ir_t * 3.3)
+        irL = rng.normal(0, 1, ir_n) * np.exp(-ir_t * decay)
+        irR = rng.normal(0, 1, ir_n) * np.exp(-ir_t * decay)
         wetL, wetR = _conv(self.L, irL), _conv(self.R, irR)
         wetL *= reverb * np.max(np.abs(self.L)) / np.max(np.abs(wetL))
         wetR *= reverb * np.max(np.abs(self.R)) / np.max(np.abs(wetR))
@@ -148,3 +148,78 @@ def hit(length=2.0, power=1.0):
     return (boom * 0.9 + crash) * power
 
 
+# ---------- epic / trailer instruments ----------
+def braam(notes, length, swell=0.35, peak=2200):
+    t = tt(length)
+    cutoff = 150 + peak * np.minimum(1, t / swell) * np.exp(-t * 0.7)
+    out = np.zeros_like(t)
+    for n in notes:
+        for det in (-0.15, 0, 0.15):
+            out += saw(midi(n) * 2 ** (det / 12), t, cutoff)
+    e = np.minimum(1, t / 0.04) * np.exp(-t * 0.9) * np.clip((length - t) / 0.3, 0, 1)
+    return np.tanh(out * e / len(notes) * 1.8)
+
+
+def string_note(note, length=0.2, bright=2500):
+    t = tt(length)
+    x = saw(midi(note), t, bright, 30) + saw(midi(note) * 1.003, t, bright, 30)
+    return x * np.minimum(1, t / 0.008) * np.exp(-t * 14) * 0.5
+
+
+def choir(notes, length):
+    t = tt(length)
+    out = np.zeros_like(t)
+    formants = [(700, 130), (1150, 160), (2600, 250)]  # "ah"
+    for n in notes:
+        for voice in range(3):
+            f0 = midi(n) * 2 ** (rng.uniform(-0.1, 0.1) / 12)
+            vib = 1 + 0.006 * np.sin(2 * np.pi * (5 + voice * 0.3) * t + voice)
+            for h in range(1, 30):
+                fh = f0 * h
+                if fh > 5000:
+                    break
+                w = sum(np.exp(-((fh - F) / B) ** 2) for F, B in formants) + 0.15 / h
+                out += w * np.sin(2 * np.pi * fh * np.cumsum(vib) / SR + voice)
+    e = np.minimum(1, t / 0.7) * np.clip((length - t) / 0.8, 0, 1)
+    return out * e / (len(notes) * 12)
+
+
+def drone(note, length):
+    t = tt(length)
+    x = saw(midi(note), t, 300 + 150 * np.sin(2 * np.pi * 0.2 * t), 20)
+    return x * np.minimum(1, t / 1.5) * np.clip((length - t) / 0.5, 0, 1) * 0.6
+
+
+def taiko(pitch=55, decay=5.0):
+    t = tt(1.2)
+    f = pitch + pitch * 0.9 * np.exp(-t * 30)
+    body = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t * decay)
+    x = rng.uniform(-1, 1, len(t))
+    skin = onepole_lp(x, 1200) * np.exp(-t * 40) * 3
+    return np.tanh((body + skin) * 1.5)
+
+
+def sub_boom(length=3.0):
+    t = tt(length)
+    f = 30 + 70 * np.exp(-t * 6)
+    return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t * 1.1)
+
+
+def crash(length=3.0):
+    t = tt(length)
+    x = rng.uniform(-1, 1, len(t))
+    return (x - onepole_lp(x, 4000)) * np.exp(-t * 1.3) * 0.5
+
+
+def riser(length):
+    t = tt(length)
+    x = rng.uniform(-1, 1, len(t))
+    x = x - onepole_lp(x, 600)
+    f = 80 * 2 ** (4.5 * t / length)
+    tone = np.sin(2 * np.pi * np.cumsum(f) / SR) + 0.5 * np.sin(2 * np.pi * np.cumsum(f * 1.5) / SR)
+    return (x * 0.6 + tone * 0.25) * (t / length) ** 2.5
+
+
+def reverse_swell(length):
+    c = crash(length)[::-1]
+    return c * 1.2
