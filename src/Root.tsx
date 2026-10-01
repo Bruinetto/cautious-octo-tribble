@@ -12,6 +12,7 @@ import {DuoAnnounce, DUO_DURATION} from './DuoAnnounce';
 import {KernelPanic, KP_DURATION} from './KernelPanic';
 import {KernelPanicEpic, KP_EPIC_DURATION} from './KernelPanicEpic';
 import {KernelPanicV3, KP_V3_DURATION} from './KernelPanicV3';
+import {ThermalThrottling, THERMAL_DURATION} from './ThermalThrottling';
 
 export const Root = () => (
   <>
@@ -40,5 +41,6 @@ export const Root = () => (
   <Composition id="KernelPanic" component={KernelPanic} durationInFrames={KP_DURATION} fps={30} width={1080} height={1920} />
   <Composition id="KernelPanicEpic" component={KernelPanicEpic} durationInFrames={KP_EPIC_DURATION} fps={30} width={1080} height={1920} />
   <Composition id="KernelPanicV3" component={KernelPanicV3} durationInFrames={KP_V3_DURATION} fps={30} width={1080} height={1920} />
+  <Composition id="ThermalThrottling" component={ThermalThrottling} durationInFrames={THERMAL_DURATION} fps={30} width={1080} height={1920} />
   </>
 );
