@@ -31,7 +31,6 @@ const T = {
   panic: 300,
   stop: 360,
   restart: 390,
-  protect: 405,
   causes: [420, 480, 540, 600],
   spot: 660,
   parts: [690, 720, 750],
@@ -195,6 +194,57 @@ const Label: React.FC<{f: number; at: number; until: number; y: number; children
   );
 };
 
+/** The big "Kernel panic." moment: staggered letters, clean shockwaves and a red burst. */
+const PanicTitle: React.FC<{f: number; at: number; until?: number}> = ({f, at, until}) => {
+  const t = f - at;
+  if (t < -2 || (until !== undefined && f > until + 8)) return null;
+  const exit = until !== undefined ? tw(f, until, until + 8, Easing.in(Easing.cubic)) : 0;
+  const letters = (word: string, y: number, size: number, color: string, delay: number, fromTop: boolean) => (
+    <div style={{position: 'absolute', left: 0, right: 0, top: y, display: 'flex', justifyContent: 'center', transform: 'translateY(-50%)'}}>
+      {word.split('').map((ch, i) => {
+        const s = spring({frame: t - delay - i * 1.6, fps: FPS, config: {damping: 11, stiffness: 240, mass: 0.7}});
+        const on = t - delay - i * 1.6 >= 0;
+        return (
+          <span
+            key={i}
+            style={{
+              display: 'inline-block',
+              fontFamily: FONT,
+              fontWeight: 700,
+              fontSize: size,
+              lineHeight: 1,
+              letterSpacing: '-0.04em',
+              color,
+              opacity: on ? Math.min(1, s * 2) * (1 - exit) : 0,
+              transform: fromTop
+                ? `translateY(${(1 - s) * -260}px) scale(${1 + exit * 0.35})`
+                : `scale(${mix(2.8, 1, s) * (1 + exit * 0.35)})`,
+            }}
+          >
+            {ch}
+          </span>
+        );
+      })}
+    </div>
+  );
+  const ring = (delay: number, color: string, width: number) => {
+    const p = tw(f, at + delay, at + delay + 32, Easing.out(Easing.cubic));
+    if (p <= 0 || p >= 1) return null;
+    const r = 60 + p * 1100;
+    return <div style={{position: 'absolute', left: 540 - r, top: 960 - r, width: r * 2, height: r * 2, borderRadius: '50%', border: `${width * (1 - p) + 1}px solid ${color}`, opacity: 1 - p}} />;
+  };
+  const burst = hitEnv(f, at + 4, 14);
+  return (
+    <>
+      <div style={{position: 'absolute', left: 540 - 900, top: 960 - 900, width: 1800, height: 1800, borderRadius: '50%', background: `radial-gradient(circle, color-mix(in srgb, ${C.red} 55%, transparent) 0%, transparent 60%)`, opacity: burst * (1 - exit), transform: `scale(${0.4 + (1 - burst) * 0.8})`}} />
+      {ring(4, C.red, 14)}
+      {ring(9, '#ffffff', 6)}
+      {letters('Kernel', 860, 190, C.text, 0, true)}
+      {letters('panic.', 1050, 220, C.red, 4, false)}
+    </>
+  );
+};
+
 const CAUSES = [
   {n: '01', title: 'Software\nbugs', sub: 'In iOS or an app', color: C.red},
   {n: '02', title: 'Faulty\nhardware', sub: 'Battery, cables, sensors', color: C.orange},
@@ -218,7 +268,9 @@ export const KernelPanicV3: React.FC = () => {
 
   // camera: gentle punch on hits, a small shake only on the two biggest
   const punch = HITS.reduce((a, [h, s]) => a + hitEnv(f, h, 9) * s * 0.035, 0);
-  const shake = hitEnv(f, T.panic, 6) * 12 + hitEnv(f, T.final, 6) * 12;
+  const shake = hitEnv(f, T.panic, 7) * 20 + hitEnv(f, T.final, 7) * 18 + hitEnv(f, T.panic + 4, 5) * 10;
+  const impactZoom = (f >= T.panic ? 0.14 * hitEnv(f, T.panic, 10) : 0) + (f >= T.final ? 0.12 * hitEnv(f, T.final, 10) : 0);
+  const flash = Math.max(hitEnv(f, T.panic, 4), hitEnv(f, T.final, 4)) * 0.45;
   const sx = Math.sin(f * 2.7) * shake;
   const sy = Math.cos(f * 3.1) * shake * 0.8;
 
@@ -236,7 +288,7 @@ export const KernelPanicV3: React.FC = () => {
   return (
     <AbsoluteFill style={{background: '#000', overflow: 'hidden', fontFamily: FONT}}>
       <Audio src={staticFile('kp/music-v3.wav')} />
-      <AbsoluteFill style={{transform: `translate(${sx}px, ${sy}px) scale(${1 + punch})`}}>
+      <AbsoluteFill style={{transform: `translate(${sx}px, ${sy}px) scale(${1 + punch + impactZoom})`}}>
         {!intro && <AbsoluteFill style={{background: `radial-gradient(ellipse 85% 45% at 50% 50%, color-mix(in srgb, ${tint} 22%, transparent), transparent 70%)`}} />}
 
         {/* ---------- 0-10s: minimal explanation ---------- */}
@@ -291,25 +343,13 @@ export const KernelPanicV3: React.FC = () => {
         )}
 
         {/* ---------- 10s: KERNEL PANIC ---------- */}
-        <Slam f={f} at={T.panic} until={T.stop - 8} y={860} size={190}>
-          Kernel
-        </Slam>
-        <Slam f={f} at={T.panic + 4} until={T.stop - 8} y={1050} size={210} color={C.red}>
-          panic.
-        </Slam>
+        <PanicTitle f={f} at={T.panic} until={T.stop - 8} />
         <Slam f={f} at={T.stop} until={T.causes[0] - 8} y={mix(900, 760, tw(f, T.restart, T.restart + 10))} size={230} color={C.red}>
           Stop.
         </Slam>
         <Slam f={f} at={T.restart} until={T.causes[0] - 8} y={980} size={190}>
           Restart.
         </Slam>
-        {f >= T.protect && f < T.causes[0] + 8 && (
-          <div style={{position: 'absolute', left: 0, right: 0, top: 1160, display: 'flex', justifyContent: 'center', opacity: 1 - tw(f, T.causes[0] - 8, T.causes[0])}}>
-            <Pill p={sp(f, T.protect, 14, 220)} color={C.green} size={44}>
-              To protect your data
-            </Pill>
-          </div>
-        )}
 
         {/* ---------- 14-22s: causes ---------- */}
         <Label f={f} at={T.causes[0]} until={T.spot - 8} y={330}>
@@ -439,12 +479,7 @@ export const KernelPanicV3: React.FC = () => {
         )}
 
         {/* ---------- 32s: final ---------- */}
-        <Slam f={f} at={T.final} y={860} size={190}>
-          Kernel
-        </Slam>
-        <Slam f={f} at={T.final + 4} y={1050} size={210} color={C.red}>
-          panic.
-        </Slam>
+        <PanicTitle f={f} at={T.final} />
         {f >= T.final + 24 && (
           <div style={{position: 'absolute', left: 0, right: 0, top: 1240, display: 'flex', justifyContent: 'center'}}>
             <Pill p={sp(f, T.final + 24, 16, 200)} color={C.blue} size={56}>
@@ -452,8 +487,29 @@ export const KernelPanicV3: React.FC = () => {
             </Pill>
           </div>
         )}
+        {f >= T.final + 34 && (
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              top: 1500,
+              textAlign: 'center',
+              fontFamily: FONT,
+              fontStyle: 'italic',
+              fontWeight: 400,
+              fontSize: 54,
+              color: C.text,
+              opacity: tw(f, T.final + 34, T.final + 52),
+              transform: `translateY(${(1 - tw(f, T.final + 34, T.final + 52)) * 16}px)`,
+            }}
+          >
+            fantexinsta
+          </div>
+        )}
       </AbsoluteFill>
 
+      <AbsoluteFill style={{background: '#fff', opacity: flash}} />
       <AbsoluteFill style={{background: '#000', opacity: Math.max(1 - tw(f, 0, 10), tw(f, T.end - 30, T.end))}} />
     </AbsoluteFill>
   );
