@@ -5,6 +5,7 @@ import '@fontsource/dm-sans/400-italic.css';
 import {Composition} from 'remotion';
 import {DesignLanguage, DURATION} from './DesignLanguage';
 import {OldVsNew, OLD_VS_NEW_DURATION} from './OldVsNew';
+import {Promo, PROMO_DURATION} from './Promo';
 
 export const Root = () => (
   <>
@@ -24,5 +25,7 @@ export const Root = () => (
     width={1080}
     height={1080}
   />
+  <Composition id="PromoVertical" component={Promo} durationInFrames={PROMO_DURATION} fps={30} width={1080} height={1920} />
+  <Composition id="PromoHorizontal" component={Promo} durationInFrames={PROMO_DURATION} fps={30} width={1920} height={1080} />
   </>
 );
