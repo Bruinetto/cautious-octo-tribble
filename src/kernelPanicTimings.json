@@ -1,0 +1,76 @@
+{
+  "fps": 30,
+  "total": 1860,
+  "segments": [
+    {
+      "key": "hook",
+      "text": "Your iPhone just restarted, all on its own?",
+      "file": "kp/hook.wav",
+      "from": 18,
+      "duration": 79
+    },
+    {
+      "key": "name",
+      "text": "That might have been a kernel panic. Here's what it means.",
+      "file": "kp/name.wav",
+      "from": 111,
+      "duration": 83
+    },
+    {
+      "key": "kernel",
+      "text": "The kernel is the core of iOS. It sits between your apps and the hardware, managing memory, the processor, and every component.",
+      "file": "kp/kernel.wav",
+      "from": 208,
+      "duration": 246
+    },
+    {
+      "key": "panic",
+      "text": "A kernel panic happens when the kernel hits an error it can't safely recover from.",
+      "file": "kp/panic.wav",
+      "from": 467,
+      "duration": 140
+    },
+    {
+      "key": "restart",
+      "text": "So instead of risking your data, it stops everything, and restarts the iPhone.",
+      "file": "kp/restart.wav",
+      "from": 620,
+      "duration": 137
+    },
+    {
+      "key": "causes",
+      "text": "Common causes are software bugs, faulty hardware like a worn battery or a damaged cable, repairs with non-genuine parts, and jailbreak tweaks.",
+      "file": "kp/causes.wav",
+      "from": 770,
+      "duration": 276
+    },
+    {
+      "key": "check",
+      "text": "To check, open Settings, Privacy and Security, Analytics and Improvements, then Analytics Data. Look for files that start with panic full.",
+      "file": "kp/check.wav",
+      "from": 1060,
+      "duration": 268
+    },
+    {
+      "key": "fix",
+      "text": "One panic now and then is nothing to worry about. Keep iOS updated, and keep a backup.",
+      "file": "kp/fix.wav",
+      "from": 1341,
+      "duration": 170
+    },
+    {
+      "key": "frequent",
+      "text": "But if your iPhone keeps restarting every few minutes, it often points to hardware. Get it checked.",
+      "file": "kp/frequent.wav",
+      "from": 1525,
+      "duration": 173
+    },
+    {
+      "key": "outro",
+      "text": "That's a kernel panic, explained.",
+      "file": "kp/outro.wav",
+      "from": 1712,
+      "duration": 58
+    }
+  ]
+}
