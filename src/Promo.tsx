@@ -94,7 +94,7 @@ const Line: React.FC<{p: number; o?: number; style?: React.CSSProperties; childr
   </div>
 );
 
-export const Promo: React.FC<{days?: [string, string, string]}> = ({days}) => {
+export const Promo: React.FC<{days?: [string, string, string]; music?: boolean}> = ({days, music = true}) => {
   const f = useCurrentFrame();
   const {width, height} = useVideoConfig();
   const vertical = height > width;
@@ -143,7 +143,7 @@ export const Promo: React.FC<{days?: [string, string, string]}> = ({days}) => {
 
   return (
     <AbsoluteFill style={{background: '#000', overflow: 'hidden'}}>
-      <Audio src={staticFile('music-promo.wav')} />
+      {music && <Audio src={staticFile('music-promo.wav')} />}
 
       {/* colour gradient rising from the bottom */}
       <AbsoluteFill
