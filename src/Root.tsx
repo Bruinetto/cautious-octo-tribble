@@ -9,6 +9,7 @@ import {OldVsNew, OLD_VS_NEW_DURATION} from './OldVsNew';
 import {Promo, PROMO_DURATION} from './Promo';
 import {Thumbnail} from './Thumbnail';
 import {DuoAnnounce, DUO_DURATION} from './DuoAnnounce';
+import {PromoSorry, PROMO_SORRY_DURATION} from './PromoSorry';
 import {KernelPanic, KP_DURATION} from './KernelPanic';
 import {KernelPanicEpic, KP_EPIC_DURATION} from './KernelPanicEpic';
 import {KernelPanicV3, KP_V3_DURATION} from './KernelPanicV3';
@@ -37,6 +38,8 @@ export const Root = () => (
   <Composition id="PromoHorizontal" component={Promo} durationInFrames={PROMO_DURATION} fps={30} width={1920} height={1080} />
   <Still id="ThumbnailHorizontal" component={Thumbnail} width={1280} height={720} />
   <Still id="ThumbnailVertical" component={Thumbnail} width={1080} height={1920} />
+  <Composition id="PromoSorryVertical" component={PromoSorry} durationInFrames={PROMO_SORRY_DURATION} fps={30} width={1080} height={1920} />
+  <Composition id="PromoSorryHorizontal" component={PromoSorry} durationInFrames={PROMO_SORRY_DURATION} fps={30} width={1920} height={1080} />
   <Composition id="DuoVertical" component={DuoAnnounce} durationInFrames={DUO_DURATION} fps={30} width={1080} height={1920} />
   <Composition id="DuoHorizontal" component={DuoAnnounce} durationInFrames={DUO_DURATION} fps={30} width={1920} height={1080} />
   <Composition id="KernelPanic" component={KernelPanic} durationInFrames={KP_DURATION} fps={30} width={1080} height={1920} />

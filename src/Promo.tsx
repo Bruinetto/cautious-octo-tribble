@@ -94,7 +94,7 @@ const Line: React.FC<{p: number; o?: number; style?: React.CSSProperties; childr
   </div>
 );
 
-export const Promo: React.FC = () => {
+export const Promo: React.FC<{days?: [string, string, string]}> = ({days}) => {
   const f = useCurrentFrame();
   const {width, height} = useVideoConfig();
   const vertical = height > width;
@@ -188,7 +188,7 @@ export const Promo: React.FC = () => {
 
         <Line p={dayP} o={exit} style={{marginTop: vertical ? 70 : 50}}>
           <div style={{fontWeight: 700, fontSize: small, letterSpacing: '0.3em', color: 'rgba(255,255,255,.75)'}}>
-            {sc.day}
+            {days ? days[idx] : sc.day}
           </div>
         </Line>
 
