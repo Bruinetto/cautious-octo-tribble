@@ -18,7 +18,7 @@ const Accent: React.FC<{color: string; children: React.ReactNode}> = ({color, ch
   <span style={{color, textShadow: `0 0 0.35em ${color}aa`}}>{children}</span>
 );
 
-export const Thumbnail: React.FC = () => {
+export const Thumbnail: React.FC<{dates?: string}> = ({dates = '9 – 11 OCTOBER'}) => {
   const {width, height} = useVideoConfig();
   const vertical = height > width;
   const u = Math.min(width, height) / 100; // 1% of the short side
@@ -63,7 +63,7 @@ export const Thumbnail: React.FC = () => {
             marginBottom: 4 * u,
           }}
         >
-          9 – 11 OCTOBER
+          {dates}
         </div>
         {lines.map((l, i) => (
           <div
